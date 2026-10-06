@@ -34,8 +34,11 @@
   <div id="modos" style="margin-top:8px">
     <button class="btnModo" data-modo="recorrido" style="background:#f2a33a;color:#101c28;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;margin-right:6px;font-weight:600">Recorrido guiado</button>
     <button class="btnModo" data-modo="fallas" style="background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;margin-right:6px">Encontrá las fallas</button>
-    <button class="btnModo" data-modo="examen" style="background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;margin-right:6px">Examen</button>
-    <button class="btnModo" data-modo="cuestionario" style="background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer">Cuestionario</button>
+    <button class="btnModo" data-modo="examen" style="background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;margin-right:6px">Autoevaluación</button>
+    <button class="btnModo" data-modo="cuestionario" style="background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer">Práctica</button>
+  </div>
+  <div id="aviso-registro" style="margin-top:7px;font-size:11px;line-height:1.35;opacity:.75;max-width:34ch">
+    Autoevaluación y Práctica no se registran. Las preguntas que cuentan están en el aula.
   </div>
   <div id="hud" style="margin-top:6px;color:#9fd3ff;display:none;line-height:1.4"></div>
   <button id="btnPista" style="display:none;margin-top:6px;margin-right:6px;background:#1c4e80;color:#f1eee6;border:0;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer">Pista</button>
@@ -156,8 +159,8 @@
   <a-entity id="g-nariz" visible="false">
     <a-entity position="4.01 1.84 -2.98" mira="tipo: nav; destino: general; titulo: Volver al inicio"></a-entity>
     <a-entity position="4.91 2.37 -0.53" mira="tipo: nav; destino: modo:fallas; titulo: Encontrá las fallas"></a-entity>
-    <a-entity position="4.50 2.37 2.03" mira="tipo: nav; destino: modo:examen; titulo: Rendir examen"></a-entity>
-    <a-entity position="2.89 1.84 4.08" mira="tipo: nav; destino: modo:cuestionario; titulo: Cuestionario"></a-entity>
+    <a-entity position="4.50 2.37 2.03" mira="tipo: nav; destino: modo:examen; titulo: Autoevaluación"></a-entity>
+    <a-entity position="2.89 1.84 4.08" mira="tipo: nav; destino: modo:cuestionario; titulo: Práctica"></a-entity>
     <a-entity position="4.74 0.26 0.84" mira="tipo: nav; destino: maqueta; titulo: Maqueta 3D del avión"></a-entity>
     <a-entity position="-2.15 2.37 -4.45" mira="panel: #panel-nariz-1; audio: nariz-1; pieza: nariz"></a-entity>
     <a-entity id="panel-nariz-1" visible="false" position="-1.76 3.77 -3.65" mirar-camara
@@ -701,7 +704,7 @@ const Examen = (() => {
   const actual = () => pendientes[0];
   function pintarHud () {
     const it = actual(), n = correctas.length + salteadas.length;
-    const linea = 'Examen ' + n + '/' + zonas.length + ' · ' + fmt(Date.now() - inicio);
+    const linea = 'Autoevaluación ' + n + '/' + zonas.length + ' · ' + fmt(Date.now() - inicio);
     hud().innerHTML = linea + (it ? '<br><b style="color:#f2a33a">Buscá y tocá: ' + it.nombre + '</b>' + (pistaActual ? ' <i>(' + pistaActual + ')</i>' : '') : '');
     document.querySelector('#hudvr').setAttribute('etiqueta-corta', 'texto', it ? 'Tocá: ' + it.nombre + (pistaActual ? ' · ' + pistaActual : '') + '  ·  ' + n + '/' + zonas.length : linea);
     document.getElementById('btnSaltear').style.display = it ? 'inline-block' : 'none';
@@ -752,7 +755,7 @@ const Examen = (() => {
     const faltan = salteadas.concat(pendientes);
     if (faltan.length) texto += ' No ubicaste: ' + faltan.slice(0, 6).map(i => i.nombre + ' (' + nombres[i.escena] + ')').join('; ') + (faltan.length > 6 ? ' y ' + (faltan.length - 6) + ' más.' : '.');
     const r = document.querySelector('#resultadovr');
-    r.setAttribute('etiqueta', {titulo: 'Resultado del examen', texto}); r.setAttribute('visible', true);
+    r.setAttribute('etiqueta', {titulo: 'Resultado de la autoevaluación', texto}); r.setAttribute('visible', true);
     hud().textContent = texto; document.querySelector('#hudvr').setAttribute('visible', false); botonesVR.setAttribute('visible', false);
     document.getElementById('btnTerminar').style.display = 'none'; document.getElementById('btnSaltear').style.display = 'none'; document.getElementById('btnPista').style.display = 'none';
     zonas.forEach(i => i.el.setAttribute('visible', false));
@@ -768,6 +771,12 @@ const Examen = (() => {
   }
   return { empezar, terminar, salir, saltear, pista, refrescarEscena, get activo () { return activo; } };
 })();
+
+// Juego y Examen se declaran con const, y const no se cuelga de window: irA() los
+// buscaba ahi, no los encontraba, y el refresco al cambiar de escena nunca corria.
+// Por eso los items de la escena anterior quedaban visibles y el de la nueva no aparecia.
+window.Juego = Juego;
+window.Examen = Examen;
 
 
 // ---------- Componente párrafo: texto largo con salto de línea, para preguntas y opciones ----------
@@ -841,7 +850,7 @@ const Cuestionario = (() => {
     pregunta.setAttribute('parrafo', 'texto', (i + 1) + '/' + PREGUNTAS.length + '  ' + q.p);
     opciones.forEach((o, k) => { o.setAttribute('parrafo', {texto: q.o[k], tam: 36, color: '#f1eee6', fondo: 'rgba(28,78,128,0.92)', borde: ''}); o.setAttribute('visible', true); });
     devolucion.setAttribute('visible', false); btnSig.setAttribute('visible', false);
-    hud().innerHTML = 'Cuestionario ' + (i + 1) + '/' + PREGUNTAS.length + '<br><b style="color:#f2a33a">' + q.p + '</b><br>' + q.o.map((t, k) => (k + 1) + ') ' + t).join('<br>') + '<br><i>Respondé apuntando a la opción en la escena.</i>';
+    hud().innerHTML = 'Práctica ' + (i + 1) + '/' + PREGUNTAS.length + '<br><b style="color:#f2a33a">' + q.p + '</b><br>' + q.o.map((t, k) => (k + 1) + ') ' + t).join('<br>') + '<br><i>Respondé apuntando a la opción en la escena.</i>';
   }
   function responder (k) {
     const q = PREGUNTAS[i]; respondida = true; const bien = k === q.c;
@@ -849,7 +858,7 @@ const Cuestionario = (() => {
     opciones.forEach((o, j) => { o.setAttribute('parrafo', 'borde', j === q.c ? '#3ddc84' : (j === k ? '#c8362b' : '')); if (j !== q.c && j !== k) o.setAttribute('visible', false); });
     devolucion.setAttribute('parrafo', {texto: bien ? q.ok : q.no, tam: 38, color: bien ? '#3ddc84' : '#ffb4a8', fondo: 'rgba(16,28,40,0.95)', borde: ''});
     devolucion.setAttribute('visible', true); btnSig.setAttribute('visible', true);
-    hud().innerHTML = 'Cuestionario ' + (i + 1) + '/' + PREGUNTAS.length + '<br>' + (bien ? '<b style="color:#3ddc84">Correcto.</b> ' : '<b style="color:#ffb4a8">Incorrecto.</b> ') + (bien ? q.ok : q.no);
+    hud().innerHTML = 'Práctica ' + (i + 1) + '/' + PREGUNTAS.length + '<br>' + (bien ? '<b style="color:#3ddc84">Correcto.</b> ' : '<b style="color:#ffb4a8">Incorrecto.</b> ') + (bien ? q.ok : q.no);
   }
   function siguiente () {
     i++;
@@ -870,7 +879,7 @@ const Cuestionario = (() => {
     activo = false;
     const texto = aciertos + ' de ' + PREGUNTAS.length + ' correctas. Nota: ' + Math.round(100 * aciertos / PREGUNTAS.length) + '/100.';
     raiz.setAttribute('visible', false);
-    const r = document.querySelector('#resultadovr'); r.setAttribute('etiqueta', {titulo: 'Resultado del cuestionario', texto}); r.setAttribute('visible', true);
+    const r = document.querySelector('#resultadovr'); r.setAttribute('etiqueta', {titulo: 'Resultado de la práctica', texto}); r.setAttribute('visible', true);
     hud().textContent = texto; document.getElementById('btnTerminar').style.display = 'none';
     document.querySelectorAll('[mira]').forEach(m => m.setAttribute('visible', true));
   }
